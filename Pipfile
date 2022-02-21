@@ -11,6 +11,7 @@ seaborn = "*"
 black = "*"
 ipykernel = "*"
 scikit-learn = "*"
+statsmodels = "*"
 
 [dev-packages]
 
