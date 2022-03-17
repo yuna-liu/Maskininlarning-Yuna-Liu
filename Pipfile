@@ -13,6 +13,8 @@ ipykernel = "*"
 scikit-learn = "*"
 statsmodels = "*"
 tensorflow = "*"
+scipy = "*"
+fuzzywuzzy = "*"
 
 [dev-packages]
 
