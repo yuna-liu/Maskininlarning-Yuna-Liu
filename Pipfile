@@ -15,6 +15,7 @@ statsmodels = "*"
 tensorflow = "*"
 scipy = "*"
 fuzzywuzzy = "*"
+opencv-python = "*"
 
 [dev-packages]
 

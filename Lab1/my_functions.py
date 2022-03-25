@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay, confusion_matrix
 
 
 def fixOutliers(df, feature, to_do, low_boundary=500, high_boundary=0):
@@ -43,6 +45,13 @@ def fixOutliers(df, feature, to_do, low_boundary=500, high_boundary=0):
 
 
 def cardioProp(df, feature):
+    """
+    return a new dataframe to save the proportion of cardio disease among feature
+    df: dataframe
+    feature: the feature want to sort
+    df_feature: cardio proportion among feature
+    
+    """
     list_feature=[feature,'cardio']
     df_feature = df[list_feature].groupby(feature).sum()
     df_feature['n_feature']=df[list_feature].groupby(feature).count()
@@ -54,7 +63,7 @@ def cardioProp(df, feature):
 
 
 def box_plot(df, *feature):
-
+    """boxplot of several features for df"""
     list_feature=feature
 
     fig, axes = plt.subplots(1, len(list_feature), dpi=120, figsize=(12,6))
@@ -70,6 +79,7 @@ def box_plot(df, *feature):
 
 
 def getWhisker(df, feature):
+    """print the lower whisker and upper whisker of feature in df """
     
     Q1 = df[feature].quantile(0.25)
     Q3 = df[feature].quantile(0.75)
@@ -77,32 +87,43 @@ def getWhisker(df, feature):
     print(f"the lower whisker of {feature}: {Q1 - 1.5 * IQR:.2f}, the upper whisker of {feature}: {Q3 + 1.5 * IQR:.2f}")
 
 
-def catBMI(x):
-    if x < 18.5:
-        return 'underweight'
-    elif x>=18.5 & x<=25:
-        return 'normal'
-    elif x>25 & x<=30:
-        return 'overweight'
-    elif x>30 & x<=35:
-        return 'obese(class I)'
-    elif x>35 & x<=40:
-        return 'obese(class II)'
-    else:
-        return 'obese(class III)'
+def train_val_test_split(df, response_variable):
+    """ use train_test_split twice to obtain train|val|test split """
+    X, y = df.drop(response_variable, axis=1), df[response_variable] 
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    X_val, X_test, y_val, y_test = train_test_split(X_test, y_test, test_size=0.5, random_state=42)
+        
+    return X_train, X_val, X_test, y_train, y_val, y_test
 
 
+def getEvaMetrics(df_metrics, dataset, model, df_val_X, df_val_y):
+    """
+    1. print classification report
+    2. plot confusion matrix
+    3. calculate the recall and precision rate
+    4. Return a new evaluation metrics by adding a new row: dataset, model, recall, precision
+    
+    df_metrics: the metrics matrix
+    dataset: the choosen dataset
+    model: the choosen model
+    df_val_X: the validation df used as prediction
+    df_val_y: the validation df used as comparision to prediction
+    
+    """
+    y_pred = model.predict(df_val_X)
+    
+    print(classification_report(df_val_y, y_pred))
 
-def catBlood(vec):
-    x = vec[0]
-    y = vec[1]
-    if x < 120 & y < 80:
-        return 'healthy'
-    elif x>=120 & x<130 & y < 80:
-        return 'elevated'
-    elif x>=130 & x<140 | y>=80 & y<90:
-        return 'hypertension stage 1'
-    elif x>=140 & x<180 | y>=90 & y<120:
-        return 'hypertension stage 2'
-    else:
-        return 'hypertension crisis'
+    cm = confusion_matrix(df_val_y, y_pred)
+    ConfusionMatrixDisplay(cm).plot()
+
+    #get tp, tp_and_fn and tp_and_fp w.r.t all classes
+    tn, fp, fn, tp = cm.ravel()
+    # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html?msclkid=e1fb3d73abb311eca626f27972c45ef5
+
+    precision = tp / (tp+fp)
+    recall = tp / (tp+fn)
+
+    #add new row to end of metrics DataFrame
+    df_metrics.loc[len(df_metrics.index)] = [dataset, model, recall, precision]
+    return df_metrics
