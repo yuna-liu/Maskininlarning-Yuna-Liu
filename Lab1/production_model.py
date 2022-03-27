@@ -2,7 +2,6 @@ import joblib
 import pandas as pd
 
 # Reload joblib
-import joblib
 myBestModel = joblib.load('cardio_disease_predictor')
 
 # import data 
